@@ -1,3 +1,6 @@
-from auth import auth_
+from chatbot import chatBot
 
-print(auth_.check_status())
+chatBot_ = chatBot()
+print(chatBot_.check_status())
+chatBot_.get_channel_id("always-ready")
+chatBot_.post_msg()

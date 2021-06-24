@@ -6,9 +6,9 @@ class Auth():
         self.base_url = "https://api.notion.com/v1/databases/"
         self._secret_key = None
         self._database_id = None
-        self._load_config()
+        self._load_notion_token()
     
-    def _load_config(self):
+    def _load_notion_token(self):
         with open("config.json", "r") as f:
             content = json.load(f)
         self._secret_key = content["secret_key"]
@@ -21,4 +21,4 @@ class Auth():
         response = requests.get(self.base_url + self._database_id , headers=header)
         return response.status_code == 200
 
-auth_ = Auth()
+
