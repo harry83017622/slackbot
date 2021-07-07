@@ -4,6 +4,7 @@ import json
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 import datetime
+import utils
 
 
 class chatBot(Auth):
@@ -27,9 +28,9 @@ class chatBot(Auth):
         #   query all
         # else
         #   do query
-        date = (datetime.datetime.now()-datetime.timedelta(days=2)
-                ).replace(microsecond=0).isoformat()
-        date = date[:11]+'18:00:00.000Z'
+        date = (datetime.datetime.utcnow()-datetime.timedelta(days=1)
+                ).replace(microsecond=0).isoformat()+'.000Z'
+        # date = date[:11]+'18:00:00.000Z'
         query = {
             "filter": {
                 "property": "Last Edited Time",
@@ -43,15 +44,82 @@ class chatBot(Auth):
             header = {"Authorization": secret_key,
                       "Notion-Version": "2021-05-13"}
             response = requests.post(
-                self.base_url + self._database_id+ "/query", headers=header, json=query)
+                self.base_url + self._database_id + "/query", headers=header, json=query)
             if response.status_code == 200:
-                self._response = len(response.json()["results"])
+                self.valid_cnt, self.duplicate_articles = self.filter_query_results(
+                    date, response.json()["results"])
+                # self._response = len(response.json()["results"])
                 # print(response.json()["results"])
-                return self._response
+                return
             else:
                 pass
         else:
             pass
+    '''
+    case 1: new article
+        update db and post cnt++
+    case 2: old article but new author
+        detect duplicated article
+        update db and post cnt++ 
+    case 3: old article and not new author
+        detect duplicated article
+        pass
+    '''
+
+    def filter_query_results(self, date, results):
+        cnt = 0
+        notion_table_set, data_results = utils.load_notion_db_from_gcp()
+        duplicate_articles = []
+        for i in results:
+            t = i['properties']['Last Edited Time']['last_edited_time']
+            # remove articles with empty title
+            if i['properties']['Problem']['title'] == []:
+                print(i['properties']['Problem']['title'])
+            else:
+                print(i['properties']['Last Edited Time']['last_edited_time'])
+                # pass if time before utc+8 00:00
+                if int(t[8:10]) == int(date[8:10]) and int(t[11:13]) < int(date[11:13]):
+                    i['properties']['Problem']['title'][0]['plain_text']
+                    print('wrong time')
+
+                else:
+                    # get author info
+                    try:
+                        author = [j['name'] for j in i['properties']['Person']['people']]
+                    except:
+                        author = []
+
+                    # detect duplicated articles
+                    if i['properties']['題號']['number'] in notion_table_set:
+                        # check author
+                        db_idx = notion_table_set[i['properties']['題號']['number']]
+                        
+                        # review old articles
+                        if author==data_results[db_idx]["people"]:
+                            continue
+                        else:
+                            # response 1 author and not equal to db
+                            if len(author)==1:
+                                duplicate_articles.append(
+                                    " ".join(author)+" please merge "+str(i['properties']['題號']['number']))
+                            # update in old article
+                            else:
+                                # check_diff = set(author)-set(data_results[db_idx]["people"])
+                                data_results[db_idx]["people"]=author
+                    else:
+                        data_results.append({
+                            "題號": i['properties']['題號']['number'],
+                            "people": author
+                        })
+
+                    print(i['properties']['Problem']['title'][0]['plain_text'])
+                    cnt += 1
+            print('---------------------------------------------------')
+        # response.json()["results"][4]['properties']['Last Edited Time']['last_edited_time']
+        print('total valid articles = {}'.format(cnt))
+
+        utils.upload_gcloud_bucket(data_results)
+        return cnt, duplicate_articles
 
     def get_channel_id(self, channel_name="chatbot-test"):
         # channel_name = "chatbot-test"
@@ -77,7 +145,7 @@ class chatBot(Auth):
         try:
             # Call the conversations.list method using the WebClient
             self.query_notion()
-            if self._response == 0:
+            if self.valid_cnt == 0:
                 result = self._client.chat_postMessage(
                     channel=self.channel_id,
                     # blocks=blocks,
@@ -87,16 +155,38 @@ class chatBot(Auth):
                 # Print result, which includes information about the message (like TS)
                 print(result)
             else:
-                date = (datetime.datetime.now()-datetime.timedelta(days=1)
-                        ).replace(microsecond=0).isoformat()[:10]
+                date = datetime.datetime.utcnow().replace(
+                    microsecond=0).isoformat()[:10]
+
                 result = self._client.chat_postMessage(
                     channel=self.channel_id,
                     # blocks=blocks,
-                    text="Total {} articles were updated on {}".format(self._response,date)
+                    text="Total {} articles were updated on {}".format(
+                        self.valid_cnt, date)
                     # You could also use a blocks[] array to send richer content
                 )
                 # Print result, which includes information about the message (like TS)
                 print(result)
+                duplicate_articles = "  ".join(self.duplicate_articles)
+                if duplicate_articles == "":
+                    pass
+                    # result = self._client.chat_postMessage(
+                    #     channel=self.channel_id,
+                    #     # blocks=blocks,
+                    #     text="There is no duplicated article updated today. Good Job! Guys~"
+                    #     # You could also use a blocks[] array to send richer content
+                    # )
+                    # # Print result, which includes information about the message (like TS)
+                    # print(result)
+                else:
+                    result = self._client.chat_postMessage(
+                        channel=self.channel_id,
+                        # blocks=blocks,
+                        text=duplicate_articles
+                        # You could also use a blocks[] array to send richer content
+                    )
+                    # Print result, which includes information about the message (like TS)
+                    print(result)
 
         except SlackApiError as e:
             print(f"Error: {e}")
