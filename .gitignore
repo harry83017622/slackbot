@@ -3,6 +3,8 @@ config.json
 notion_table.json
 *.ipynb
 
+.vscode/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
