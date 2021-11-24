@@ -39,22 +39,22 @@ class chatBot(Auth):
                 }
             }
         }
-        if query:
-            secret_key = self._secret_key
-            header = {"Authorization": secret_key,
-                      "Notion-Version": "2021-05-13"}
-            response = requests.post(
-                self.base_url + self._database_id + "/query", headers=header, json=query)
-            if response.status_code == 200:
-                self.valid_cnt, self.duplicate_articles = self.filter_query_results(
-                    date, response.json()["results"])
-                # self._response = len(response.json()["results"])
-                # print(response.json()["results"])
-                return
-            else:
-                pass
+        
+        secret_key = self._secret_key
+        header = {"Authorization": secret_key,
+                    "Notion-Version": "2021-05-13"}
+        response = requests.post(
+            self.base_url + self._database_id + "/query", headers=header, json=query)
+        if response.status_code == 200:
+            # print(response.json()["results"][0])
+            self.valid_cnt, self.duplicate_articles = self.filter_query_results(
+                date, response.json()["results"])
+            # self._response = len(response.json()["results"])
+            # print(response.json()["results"])
+            return
         else:
-            pass
+            print("bad request response")
+    
     '''
     case 1: new article
         update db and post cnt++
@@ -68,7 +68,7 @@ class chatBot(Auth):
 
     def filter_query_results(self, date, results):
         cnt = 0
-        notion_table_set, data_results = utils.load_notion_db_from_gcp()
+        notion_question_id_to_idx, data_results = utils.load_notion_db_from_gcp()
         duplicate_articles = []
         for i in results:
             t = i['properties']['Last Edited Time']['last_edited_time']
@@ -90,9 +90,10 @@ class chatBot(Auth):
                         author = []
 
                     # detect duplicated articles
-                    if i['properties']['題號']['number'] in notion_table_set:
+                    # if i['properties']['題號']['number'] in notion_question_id_to_idx:
+                    if notion_question_id_to_idx.get(i['properties']['題號']['number'],None):
                         # check author
-                        db_idx = notion_table_set[i['properties']['題號']['number']]
+                        db_idx = notion_question_id_to_idx[i['properties']['題號']['number']]
                         
                         # review old articles
                         if author==data_results[db_idx]["people"]:

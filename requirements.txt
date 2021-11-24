@@ -1,0 +1,4 @@
+slack-bolt==1.6.1
+slack-sdk==3.7.0
+requests==2.25.1
+google-cloud-storage==1.40.0

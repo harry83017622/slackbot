@@ -37,10 +37,10 @@ def load_notion_db_from_gcp():
     #     data = json.load(jsonfile)
     data = get_gcloud_bucket()
     # print(data["results"][1])
-    notion_table_set = {}
+    notion_question_id_to_idx = {}
     for idx, i in enumerate(data["results"]):
-        notion_table_set[i["題號"]] = idx
-    return notion_table_set, data["results"]
+        notion_question_id_to_idx[i["題號"]] = idx
+    return notion_question_id_to_idx, data["results"]
 
 
 # notion_table_set, table = load_nums()
