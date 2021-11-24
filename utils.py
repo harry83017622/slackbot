@@ -33,9 +33,9 @@ def get_gcloud_bucket():
 
 
 def load_notion_db_from_gcp():
-    # with open('notion_table.json', encoding='utf8') as jsonfile:
-    #     data = json.load(jsonfile)
-    data = get_gcloud_bucket()
+    with open('notion_table.json', encoding='utf8') as jsonfile:
+        data = json.load(jsonfile)
+    # data = get_gcloud_bucket()
     # print(data["results"][1])
     notion_question_id_to_idx = {}
     for idx, i in enumerate(data["results"]):

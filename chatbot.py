@@ -1,4 +1,5 @@
 from auth import Auth
+from user import User
 import requests
 import json
 from slack_sdk import WebClient
@@ -12,7 +13,9 @@ class chatBot(Auth):
         super().__init__()
         self._load_slack_token()
         self._client = WebClient(token=self._slack_token)
+        self._user = User()
         self._response = None
+        
 
     def _load_slack_token(self):
         with open("config.json", "r") as f:
@@ -67,6 +70,7 @@ class chatBot(Auth):
     '''
 
     def filter_query_results(self, date, results):
+        print(results)
         cnt = 0
         notion_question_id_to_idx, data_results = utils.load_notion_db_from_gcp()
         duplicate_articles = []
@@ -74,7 +78,7 @@ class chatBot(Auth):
             t = i['properties']['Last Edited Time']['last_edited_time']
             # remove articles with empty title
             if i['properties']['Problem']['title'] == []:
-                print(i['properties']['Problem']['title'])
+                continue
             else:
                 print(i['properties']['Last Edited Time']['last_edited_time'])
                 # pass if time before utc+8 00:00
@@ -106,8 +110,28 @@ class chatBot(Auth):
                             # update in old article
                             else:
                                 # check_diff = set(author)-set(data_results[db_idx]["people"])
+                                
+                                
+                                
+                                # intercept origin author and new author
+                                
+                                
+                                
+                                
+                                
+                                
                                 data_results[db_idx]["people"]=author
                     else:
+                        
+                        # create new author here 
+
+
+
+
+
+
+
+
                         data_results.append({
                             "題號": i['properties']['題號']['number'],
                             "people": author
@@ -119,7 +143,7 @@ class chatBot(Auth):
         # response.json()["results"][4]['properties']['Last Edited Time']['last_edited_time']
         print('total valid articles = {}'.format(cnt))
 
-        utils.upload_gcloud_bucket(data_results)
+        # utils.upload_gcloud_bucket(data_results)
         return cnt, duplicate_articles
 
     def get_channel_id(self, channel_name="chatbot-test"):
