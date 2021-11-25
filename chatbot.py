@@ -70,7 +70,9 @@ class chatBot(Auth):
     '''
 
     def filter_query_results(self, date, results):
-        print(results)
+        user_db_date = datetime.datetime.utcnow().replace(
+                    microsecond=0).isoformat()[:10]
+        # print(results)
         cnt = 0
         notion_question_id_to_idx, data_results = utils.load_notion_db_from_gcp()
         duplicate_articles = []
@@ -109,24 +111,42 @@ class chatBot(Auth):
                                     " ".join(author)+" please merge "+str(i['properties']['題號']['number']))
                             # update in old article
                             else:
+
+                                # push new author to leaderboard db
+                                for new_author in author:
+                                    
+                                    if new_author in data_results[db_idx]["people"]:
+                                        continue
+                                    self._user.push(
+                                        record = { 
+                                            user_db_date : {
+                                                "name" : new_author,
+                                                "question" : [i['properties']['題號']['number']]
+                                            }
+                                        }
+                                    )
+                                
                                 # check_diff = set(author)-set(data_results[db_idx]["people"])
                                 
                                 
                                 
                                 # intercept origin author and new author
-                                
-                                
-                                
-                                
-                                
-                                
+
                                 data_results[db_idx]["people"]=author
                     else:
                         
                         # create new author here 
 
 
-
+                        for new_author in author:
+                            self._user.push(
+                                record = { 
+                                    user_db_date : {
+                                        "name" : new_author,
+                                        "question" : [i['properties']['題號']['number']]
+                                    }
+                                }
+                            )
 
 
 
@@ -142,7 +162,7 @@ class chatBot(Auth):
             print('---------------------------------------------------')
         # response.json()["results"][4]['properties']['Last Edited Time']['last_edited_time']
         print('total valid articles = {}'.format(cnt))
-
+        print(self._user.daily_record)
         # utils.upload_gcloud_bucket(data_results)
         return cnt, duplicate_articles
 
@@ -178,7 +198,7 @@ class chatBot(Auth):
                     # You could also use a blocks[] array to send richer content
                 )
                 # Print result, which includes information about the message (like TS)
-                print(result)
+                # print(result)
             else:
                 date = datetime.datetime.utcnow().replace(
                     microsecond=0).isoformat()[:10]
@@ -190,8 +210,70 @@ class chatBot(Auth):
                         self.valid_cnt, date)
                     # You could also use a blocks[] array to send richer content
                 )
+
+                blocks_head= [
+                    {
+                        "type": "divider"
+                    },
+                    {
+                        "type": "header",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Daily Ranking",
+                            "emoji": True
+                        }
+                    }
+                ]
+                blocks_body = []
+                # print(self._user.daily_record)
+                # print(date)
+                for writer, nums in self._user.daily_record[date][date]["content"].items():
+                    print(writer,nums)
+                    nums = [str(i) for i in nums]
+                    stars = ":star:"*len(nums)
+                    question_name = "\n".join(nums)
+                    blocks_body.append(
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"*{writer}*\n{stars}\n {question_name}"
+                            }
+                        }
+                    )
+                # blocks_body=[
+                    
+                #     {
+                #         "type": "section",
+                #         "text": {
+                #             "type": "mrkdwn",
+                #             "text": "*user_name_2*\n:star::star:\n question_name_1 \n question_name_2"
+                #         }
+                #     }
+                # ]
+
+                blocks_end =[
+                    {
+                        "type": "divider"
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "*~Now move your ass and start coding~* :cat: <https://leetcode.com/|Leetcode>"
+                        }
+                    }
+                ]
+                blocks = blocks_head+blocks_body+blocks_end
+                
+                result = self._client.chat_postMessage(
+                    channel=self.channel_id,
+                    blocks=blocks
+                    # You could also use a blocks[] array to send richer content
+                )
+
                 # Print result, which includes information about the message (like TS)
-                print(result)
+                # print(result)
                 duplicate_articles = "  ".join(self.duplicate_articles)
                 if duplicate_articles == "":
                     pass
@@ -211,7 +293,7 @@ class chatBot(Auth):
                         # You could also use a blocks[] array to send richer content
                     )
                     # Print result, which includes information about the message (like TS)
-                    print(result)
+                    # print(result)
 
         except SlackApiError as e:
             print(f"Error: {e}")
