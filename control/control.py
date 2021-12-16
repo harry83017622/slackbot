@@ -1,5 +1,10 @@
-from ..model import model
-from ..view import view
+from model import model, auth
+from view import view
+
+import datetime
+
+login = auth.Auth()
+ChatbotDB = model.Modeler(login)
 
 class AbstractSubject(object):
     def register(self, listener):
@@ -11,20 +16,25 @@ class AbstractSubject(object):
     def notify_viewer(self, event):
         raise NotImplementedError("Must subclass me")
  
-ChatbotDB = model.Modeler()
+
 
 class Controller(AbstractSubject):
     def __init__(self):
         self.listeners = []
         self.data = None
 
-    def do_something_1(self, raw_data):
-        self.data = raw_input('Enter something to do:')
-        return self.data
+    def filter_query_results(self, response):
+        if response.status_code != 200:
+            return "bad request response"
+
+        # print(response.json()["results"])
+        nums = [{num["properties"]["題號"]["number"]:num["properties"]["Person"]["people"]} for num in response.json()["results"]]
+        return nums
 
     def do_something_2(self):
-        self.data = raw_input('Enter something to do:')
-        return self.data
+        # self.data = raw_input('Enter something to do:')
+        # return self.data
+        pass
 
     # Implement abstract Class AbstractSubject
 
@@ -39,39 +49,49 @@ class Controller(AbstractSubject):
             listener.notify(event)
 
 
-
-
-def check_duplicate():
+def check_duplicate(query_today=None):
 
     m_Controller = Controller()
     m_Viewer = view.Viewer(m_Controller)
 
     raw_data = ChatbotDB.query_daily_notion()
-    action = m_Controller.do_something_1(raw_data)
-    m_Controller.notify_viewers(action)
+    nums_authors_map = m_Controller.filter_query_results(raw_data)
+    
+    articles = [list(tmp.keys())[0] for tmp in nums_authors_map]
+    cnt_articles = ChatbotDB.article_count(articles)
+    
+    if not any(list(map(lambda x: x!=1,cnt_articles))):
+        m_Controller.notify_viewers("Detect no duplicated article")
+        return
 
+    action = "Please merge the article with\n"
+    for idx, cnt in enumerate(cnt_articles):
+        if cnt != 1:
+            article = articles[idx]
+            
+            author_list = [i["name"] for i in list(nums_authors_map[idx].values())[0]]
+            arthors = ', '.join(author_list)
+            action += f"question number: {article} and arthor: {arthors}\n"
+    
+    m_Controller.notify_viewers(action)
     return
 
-def update_leaderboard():
+# def update_leaderboard():
 
-    m_Controller = Controller()
-    m_Viewer = view.Viewer(m_Controller)
+#     m_Controller = Controller()
+#     m_Viewer = view.Viewer(m_Controller)
 
-    raw_data = ChatbotDB.query_daily_notion()
-    action = m_Controller.do_something_2(raw_data)
-    m_Controller.notify_viewers(action)
-    return
+    
+#     action = m_Controller.do_something_2(raw_data)
+#     m_Controller.notify_viewers(action)
+#     return
 
 def daily_update():
-    # query self db
-    # query notion api
-    # implement this in model 
 
-    # instantiate view
-    # register view to this process(controller)
-    # do this for check duplicate and daily leaderboard
-    
-    check_duplicate()
-    update_leaderboard()
+    query_today = ChatbotDB.query_daily_notion()
+    query_past = ChatbotDB.query_past_record()
+
+    check_duplicate(query_today=query_today)
+    # update_leaderboard()
 
     return

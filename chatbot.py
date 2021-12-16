@@ -1,4 +1,4 @@
-from auth import Auth
+from model.auth import Auth
 from user import User
 import requests
 import json

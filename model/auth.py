@@ -15,10 +15,3 @@ class Auth():
         self._database_id = content["database_id"]
         return
 
-    def check_status(self):
-        secret_key = self._secret_key
-        header = {"Authorization":secret_key, "Notion-Version":"2021-05-13"}
-        response = requests.get(self.base_url + self._database_id , headers=header)
-        return response.status_code == 200
-
-
