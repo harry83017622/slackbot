@@ -2,6 +2,7 @@
 config.json
 notion_table.json
 *.ipynb
+*.zip
 
 .vscode/
 

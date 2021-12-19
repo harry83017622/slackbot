@@ -60,9 +60,27 @@ class Controller(AbstractSubject):
                 if not past_article or (author not in past_article):
                     # print(past_article)
                     user_points[author] += 1
-            
 
         return user_points
+    
+    def manage_filter_results_upload_gcp(self):
+        today_query = Controller.today_query
+        past_record = Controller.past_record
+
+        if not today_query:
+            return
+        for idx, article in enumerate(today_query):
+            today_article = list(article.keys())[0]
+            # print(list(article.values())[0])
+            author_list = [i["name"] for i in list(article.values())[0] if "name" in i.keys()]
+            past_article = past_record.get(str(today_article),[])
+            
+            for author in author_list:
+                if not past_article or (author not in past_article):
+                    past_article.append(author)
+            past_record[str(today_article)] = past_article
+
+        return past_record
 
     # Implement abstract Class AbstractSubject
 
@@ -119,8 +137,8 @@ def update_leaderboard():
     action = m_Controller.count_user_points()
     # action = len(past_record)
     m_Controller.notify_viewers(action)
-    
-    ChatbotDB.update_record({})
+    upload_data = m_Controller.manage_filter_results_upload_gcp()
+    ChatbotDB.update_record_to_gcp(upload_data)
     return
 
 def daily_update():

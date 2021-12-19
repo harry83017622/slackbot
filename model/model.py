@@ -66,12 +66,25 @@ class Modeler:
         '''
         return query of articles(key) and author(value) from local db 
         '''
-        # past_record = Modeler.load_past_record()
-        past_record = Modeler.load_past_record_from_file()
+        past_record = Modeler.load_past_record()
+        # past_record = Modeler.load_past_record_from_file()
         return past_record
 
-    def update_record(self,content:dict) -> None:
+    def update_record_to_gcp(self,content:dict) -> None:
+        with open("config.json") as fin:
+            cfg = json.load(fin)
+        bucket_name = 'leetcode-notion-db'
+        bucket = storage.Client().get_bucket(bucket_name)
+        gcp_pth = "past_record.json" if cfg["mode"]=="deploy" else "test.json"
+        blob = bucket.blob(gcp_pth)
+        blob.upload_from_string(
+            data=json.dumps(content,ensure_ascii=False), 
+            content_type='application/json'
+            )
         return
+
+    
+        
 
     @staticmethod
     def load_past_record():

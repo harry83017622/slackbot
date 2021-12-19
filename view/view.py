@@ -17,8 +17,12 @@ class Viewer(object):
             content = json.load(f)
         self._secret_key = content["slack_token"]
 
-    def get_channel_id(self, channel_name="chatbot-test"):
+    def get_channel_id(self):
         # channel_name = "chatbot-test"
+        with open("config.json") as fin:
+            cfg = json.load(fin)
+        channel_name = "always-ready" if cfg["mode"]=="deploy" else "chatbot-test"
+
         channel_id = None
         try:
             # Call the conversations.list method using the WebClient
@@ -39,6 +43,12 @@ class Viewer(object):
 
     def notify(self, event):
         if isinstance(event,str):
+            result = self._client.chat_postMessage(
+                    channel=self.channel_id,
+                    # blocks=blocks,
+                    text=event
+                    # You could also use a blocks[] array to send richer content
+                )
             print("received event", event)
         elif isinstance(event,Counter):
             msg = create_template(event.most_common())
@@ -48,4 +58,4 @@ class Viewer(object):
                 # You could also use a blocks[] array to send richer content
             )
             print(msg)
-            print(result)
+            # print(result)
