@@ -1,9 +1,12 @@
 import datetime
 import requests
+from google.cloud import storage
+import json
 
 class Modeler:
     def __init__(self,auth) -> None:
         self.auth = auth
+        self.today_query = None
 
     def query_daily_notion(self) -> object:
         '''
@@ -29,9 +32,9 @@ class Modeler:
             response = requests.post(
                 auth.base_url + auth._database_id + "/query", headers=header, json=query)
             return response
-            
+        self.today_query = query_notion()
 
-        return query_notion()
+        return self.today_query
 
     def article_count(self,nums:list) -> list:
         '''
@@ -40,6 +43,7 @@ class Modeler:
         '''
         auth = self.auth
         ret = []
+        
         for num in nums:
             query = {
                 "filter": {
@@ -54,7 +58,7 @@ class Modeler:
                         "Notion-Version": "2021-05-13"}
             response = requests.post(
                 auth.base_url + auth._database_id + "/query", headers=header, json=query)
-
+            # print(num)
             ret.append(len(response.json()["results"]))
         return ret
 
@@ -62,7 +66,25 @@ class Modeler:
         '''
         return query of articles(key) and author(value) from local db 
         '''
-        return dict
+        # past_record = Modeler.load_past_record()
+        past_record = Modeler.load_past_record_from_file()
+        return past_record
 
     def update_record(self,content:dict) -> None:
         return
+
+    @staticmethod
+    def load_past_record():
+        bucket_name = 'leetcode-notion-db'
+        storage_client = storage.Client()
+        bucket = storage_client.get_bucket(bucket_name)
+        blob = bucket.get_blob('past_record.json')
+        fileData = json.loads(blob.download_as_string())
+        return fileData
+
+    @staticmethod
+    def load_past_record_from_file():
+        with open("past_record.json") as fin:
+            past_record = json.load(fin)
+        return past_record
+        

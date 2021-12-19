@@ -1,3 +1,4 @@
+from collections import Counter
 from model import model, auth
 from view import view
 
@@ -19,22 +20,49 @@ class AbstractSubject(object):
 
 
 class Controller(AbstractSubject):
+    # public static class variable
+    today_query = None
+    past_record = None
+
     def __init__(self):
         self.listeners = []
-        self.data = None
 
     def filter_query_results(self, response):
+        
         if response.status_code != 200:
             return "bad request response"
 
-        # print(response.json()["results"])
-        nums = [{num["properties"]["題號"]["number"]:num["properties"]["Person"]["people"]} for num in response.json()["results"]]
+        if len(response.json()["results"])==0:
+            return "no leetcoder today"
+
+        # {question : authors} = {int: list(str)} only when authors exist
+        nums = []
+        for num in response.json()["results"]:
+            if num["properties"]["Person"]["people"] and ("題號" in num["properties"].keys()):
+                nums.append({num["properties"]["題號"]["number"]:num["properties"]["Person"]["people"]})
+        Controller.today_query = nums
         return nums
 
-    def do_something_2(self):
-        # self.data = raw_input('Enter something to do:')
-        # return self.data
-        pass
+    def count_user_points(self):
+        user_points = Counter()
+        today_query = Controller.today_query
+        past_record = Controller.past_record
+
+        if not today_query:
+            return
+        for idx, article in enumerate(today_query):
+            today_article = list(article.keys())[0]
+            # print(list(article.values())[0])
+            author_list = [i["name"] for i in list(article.values())[0] if "name" in i.keys()]
+            past_article = past_record.get(str(today_article))
+            
+            for author in author_list:
+                if not past_article or (author not in past_article):
+                    # print(past_article)
+                    user_points[author] += 1
+            
+
+        return user_points
 
     # Implement abstract Class AbstractSubject
 
@@ -49,49 +77,55 @@ class Controller(AbstractSubject):
             listener.notify(event)
 
 
-def check_duplicate(query_today=None):
+def check_duplicate():
 
     m_Controller = Controller()
     m_Viewer = view.Viewer(m_Controller)
 
     raw_data = ChatbotDB.query_daily_notion()
-    nums_authors_map = m_Controller.filter_query_results(raw_data)
-    
-    articles = [list(tmp.keys())[0] for tmp in nums_authors_map]
+    filter_result = m_Controller.filter_query_results(raw_data)
+
+    if isinstance(filter_result,str):
+        return m_Controller.notify_viewers(filter_result)
+        
+    articles = [list(tmp.keys())[0] for tmp in filter_result]
     cnt_articles = ChatbotDB.article_count(articles)
     
     if not any(list(map(lambda x: x!=1,cnt_articles))):
-        m_Controller.notify_viewers("Detect no duplicated article")
-        return
+        return m_Controller.notify_viewers("Detect no duplicated article")
+        
 
     action = "Please merge the article with\n"
     for idx, cnt in enumerate(cnt_articles):
+        article = articles[idx]
+        author_list = [i["name"] for i in list(filter_result[idx].values())[0]]
         if cnt != 1:
-            article = articles[idx]
-            
-            author_list = [i["name"] for i in list(nums_authors_map[idx].values())[0]]
             arthors = ', '.join(author_list)
             action += f"question number: {article} and arthor: {arthors}\n"
-    
+            '''
+            TODO
+            Need to push warning articles in queue and check in daily
+            '''
+
     m_Controller.notify_viewers(action)
     return
 
-# def update_leaderboard():
+def update_leaderboard():
 
-#     m_Controller = Controller()
-#     m_Viewer = view.Viewer(m_Controller)
-
+    m_Controller = Controller()
+    m_Viewer = view.Viewer(m_Controller)
+    past_record = ChatbotDB.query_past_record()
+    Controller.past_record = past_record
+    action = m_Controller.count_user_points()
+    # action = len(past_record)
+    m_Controller.notify_viewers(action)
     
-#     action = m_Controller.do_something_2(raw_data)
-#     m_Controller.notify_viewers(action)
-#     return
+    ChatbotDB.update_record({})
+    return
 
 def daily_update():
 
-    query_today = ChatbotDB.query_daily_notion()
-    query_past = ChatbotDB.query_past_record()
-
-    check_duplicate(query_today=query_today)
-    # update_leaderboard()
-
+    check_duplicate()
+    update_leaderboard()
+    
     return
