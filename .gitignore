@@ -1,7 +1,7 @@
 # Secret token and database_id
 config.json
 notion_table.json
-*.ipynb
+# *.ipynb
 *.zip
 
 .vscode/
