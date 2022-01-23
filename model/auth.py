@@ -1,5 +1,5 @@
 import json
-import requests
+
 
 class Auth():
     def __init__(self):
@@ -14,4 +14,3 @@ class Auth():
         self._secret_key = content["secret_key"]
         self._database_id = content["database_id"]
         return
-

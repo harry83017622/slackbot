@@ -3,8 +3,9 @@ import requests
 from google.cloud import storage
 import json
 
+
 class Modeler:
-    def __init__(self,auth) -> None:
+    def __init__(self, auth) -> None:
         self.auth = auth
         self.today_query = None
 
@@ -14,9 +15,10 @@ class Modeler:
         '''
         auth = self.auth
         # print(auth.__dict__)
+
         def query_notion():
-            date = (datetime.datetime.utcnow()-datetime.timedelta(days=1)
-                    ).replace(microsecond=0).isoformat()+'.000Z'
+            date = (datetime.datetime.utcnow() - datetime.timedelta(days=1)
+                    ).replace(microsecond=0).isoformat() + '.000Z'
             # date = date[:11]+'18:00:00.000Z'
             query = {
                 "filter": {
@@ -27,16 +29,22 @@ class Modeler:
                 }
             }
 
-            header = {"Authorization": auth._secret_key,
-                        "Notion-Version": "2021-05-13"}
+            header = {
+                "Authorization": auth._secret_key,
+                "Notion-Version": "2021-05-13"
+            }
             response = requests.post(
-                auth.base_url + auth._database_id + "/query", headers=header, json=query)
+                auth.base_url + auth._database_id + "/query",
+                headers=header,
+                json=query
+            )
             return response
+
         self.today_query = query_notion()
 
         return self.today_query
 
-    def article_count(self,nums:list) -> list:
+    def article_count(self, nums: list) -> list:
         '''
         input article number
         output count of articles
@@ -54,37 +62,45 @@ class Modeler:
                 }
             }
 
-            header = {"Authorization": auth._secret_key,
-                        "Notion-Version": "2021-05-13"}
+            header = {
+                "Authorization": auth._secret_key,
+                "Notion-Version": "2021-05-13"
+            }
             response = requests.post(
-                auth.base_url + auth._database_id + "/query", headers=header, json=query)
+                auth.base_url + auth._database_id + "/query",
+                headers=header,
+                json=query
+            )
             # print(num)
             ret.append(len(response.json()["results"]))
         return ret
 
     def query_past_record(self) -> dict:
         '''
-        return query of articles(key) and author(value) from local db 
+        return query of articles(key) and author(value) from local db
         '''
         past_record = Modeler.load_past_record()
         # past_record = Modeler.load_past_record_from_file()
         return past_record
 
-    def update_record_to_gcp(self,content:dict) -> None:
+    def update_record_to_gcp(self, content: dict) -> None:
         with open("config.json") as fin:
             cfg = json.load(fin)
+        
         bucket_name = 'leetcode-notion-db'
         bucket = storage.Client().get_bucket(bucket_name)
-        gcp_pth = "past_record.json" if cfg["mode"]=="deploy" else "test.json"
+
+        if cfg["mode"] == "deploy":
+            gcp_pth = "past_record.json"
+        else:
+            gcp_pth = "test.json"
+
         blob = bucket.blob(gcp_pth)
         blob.upload_from_string(
-            data=json.dumps(content,ensure_ascii=False), 
+            data=json.dumps(content, ensure_ascii=False),
             content_type='application/json'
-            )
+        )
         return
-
-    
-        
 
     @staticmethod
     def load_past_record():
@@ -100,4 +116,3 @@ class Modeler:
         with open("past_record.json") as fin:
             past_record = json.load(fin)
         return past_record
-        

@@ -5,6 +5,7 @@ from slack_sdk.errors import SlackApiError
 
 from view.template import create_template
 
+
 class Viewer(object):
     def __init__(self, controller):
         controller.register(self)
@@ -18,10 +19,15 @@ class Viewer(object):
         self._secret_key = content["slack_token"]
 
     def get_channel_id(self):
+
         # channel_name = "chatbot-test"
         with open("config.json") as fin:
             cfg = json.load(fin)
-        channel_name = "always-ready" if cfg["mode"]=="deploy" else "chatbot-test"
+        
+        if cfg["mode"] == "deploy":
+            channel_name = "always-ready"
+        else:
+            channel_name = "chatbot-test"
 
         channel_id = None
         try:
@@ -42,20 +48,19 @@ class Viewer(object):
             return -1
 
     def notify(self, event):
-        if isinstance(event,str):
-            result = self._client.chat_postMessage(
-                    channel=self.channel_id,
-                    # blocks=blocks,
-                    text=event
-                    # You could also use a blocks[] array to send richer content
-                )
+        if isinstance(event, str):
+            self._client.chat_postMessage(
+                channel=self.channel_id,
+                # blocks=blocks,
+                text=event
+                # You could also use a blocks[] array to send richer content
+            )
             print("received event", event)
-        elif isinstance(event,Counter):
+        elif isinstance(event, Counter):
             msg = create_template(event.most_common())
-            result = self._client.chat_postMessage(
+            self._client.chat_postMessage(
                 channel=self.channel_id,
                 blocks=msg
                 # You could also use a blocks[] array to send richer content
             )
             print(msg)
-            # print(result)
