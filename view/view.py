@@ -1,5 +1,6 @@
-from collections import Counter
 import json
+from collections import Counter
+
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
@@ -23,7 +24,7 @@ class Viewer(object):
         # channel_name = "chatbot-test"
         with open("config.json") as fin:
             cfg = json.load(fin)
-        
+
         if cfg["mode"] == "deploy":
             channel_name = "always-ready"
         else:

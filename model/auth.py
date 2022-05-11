@@ -1,13 +1,13 @@
 import json
 
 
-class Auth():
+class Auth:
     def __init__(self):
         self.base_url = "https://api.notion.com/v1/databases/"
         self._secret_key = None
         self._database_id = None
         self._load_notion_token()
-    
+
     def _load_notion_token(self):
         with open("config.json", "r") as f:
             content = json.load(f)

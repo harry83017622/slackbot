@@ -1,3 +1,10 @@
+## **Usage**
+```
+conda create --name slackbot python=3.8
+conda activate slackbot
+pip install -e ".[develop]"
+```
+
 ## **Structure**
 ```
 .

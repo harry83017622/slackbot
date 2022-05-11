@@ -1,3 +1,0 @@
-[flake8]
-# blank line contains whitespaceflake8(W293)
-ignore = W293

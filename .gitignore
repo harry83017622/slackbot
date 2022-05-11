@@ -1,6 +1,5 @@
 # Secret token and database_id
-config.json
-notion_table.json
+secret.json
 # *.ipynb
 *.zip
 
