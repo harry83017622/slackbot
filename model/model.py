@@ -63,22 +63,20 @@ class Modeler:
         return query of articles(key) and author(value) from local db
         """
         if use_local_src:
+            print("using local db")
             return Modeler.load_past_record_from_file()
         else:
+            print("using gcp bucket db")
             return Modeler.load_past_record()
 
     def update_record_to_gcp(self, content: dict) -> None:
+        print("uploading to gcp bucket db")
         with open("secret.json") as fin:
             cfg = json.load(fin)
 
         bucket_name = "leetcode-notion-db"
         bucket = storage.Client().get_bucket(bucket_name)
-
-        if cfg["mode"] == "deploy":
-            gcp_pth = "past_record.json"
-        else:
-            gcp_pth = "test.json"
-
+        gcp_pth = "past_record.json"
         blob = bucket.blob(gcp_pth)
         blob.upload_from_string(
             data=json.dumps(content, ensure_ascii=False),
