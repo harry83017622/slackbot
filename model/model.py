@@ -58,16 +58,17 @@ class Modeler:
             ret.append(len(response.json()["results"]))
         return ret
 
-    def query_past_record(self) -> dict:
+    def query_past_record(self, use_local_src: bool) -> dict:
         """
         return query of articles(key) and author(value) from local db
         """
-        past_record = Modeler.load_past_record()
-        # past_record = Modeler.load_past_record_from_file()
-        return past_record
+        if use_local_src:
+            return Modeler.load_past_record_from_file()
+        else:
+            return Modeler.load_past_record()
 
     def update_record_to_gcp(self, content: dict) -> None:
-        with open("config.json") as fin:
+        with open("secret.json") as fin:
             cfg = json.load(fin)
 
         bucket_name = "leetcode-notion-db"

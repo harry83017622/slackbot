@@ -1,6 +1,6 @@
 import json
-import sys
 
+import argparse
 import requests
 from google.cloud import storage
 
@@ -8,11 +8,17 @@ from utils.logger_setting import log
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Crawling notion db.")
+    parser.add_argument("-p", "--path", type=str, default="past_record.json", help="Path to crawling results")
+    parser.add_argument("-u", "--upload", action="store_true", help="upload to gcp bucket")
+    args = parser.parse_args()
     question_authors_map = crawl_notion_sorted()
-    upload_gcloud_bucket(question_authors_map)
-    with open("past_record.json", "w+") as fin:
-        json.dump(question_authors_map, fin)
-    print(len(question_authors_map))
+    if args.upload:
+        upload_gcloud_bucket(question_authors_map)
+    else:
+        with open(args.path, "w+") as fin:
+            json.dump(question_authors_map, fin)
+    # print(len(question_authors_map))
 
 
 def crawl_notion_sorted():

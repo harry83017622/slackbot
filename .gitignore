@@ -1,5 +1,6 @@
 # Secret token and database_id
 secret.json
+past_record.json
 # *.ipynb
 *.zip
 

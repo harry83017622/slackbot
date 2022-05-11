@@ -9,7 +9,7 @@ class Auth:
         self._load_notion_token()
 
     def _load_notion_token(self):
-        with open("config.json", "r") as f:
+        with open("secret.json", "r") as f:
             content = json.load(f)
         self._secret_key = content["secret_key"]
         self._database_id = content["database_id"]

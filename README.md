@@ -3,7 +3,15 @@
 conda create --name slackbot python=3.8
 conda activate slackbot
 pip install -e ".[develop]"
+
+// Acquire the same data from gcp bucket, prepare this for daily ranking in slack.
+make -f Makefile write_record_to_local
+
+// upload db to gcp bucket, this action needs credential.
+make -f Makefile upload_record
 ```
+
+For daily slack posting, please read comment in main.py
 
 ## **Structure**
 ```

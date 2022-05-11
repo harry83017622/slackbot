@@ -1,4 +1,4 @@
-.PHONY: format lint
+.PHONY: format lint upload_record
 
 format:
 	isort .
@@ -6,3 +6,11 @@ format:
 
 lint: format
 	flake8 .
+
+upload_record:
+	python record_collector.py \
+		--upload
+
+write_record_to_local:
+	python record_collector.py \
+		--path past_record.json

@@ -15,14 +15,14 @@ class Viewer(object):
         self.get_channel_id()
 
     def _load_slack_token(self):
-        with open("config.json", "r") as f:
+        with open("secret.json", "r") as f:
             content = json.load(f)
         self._secret_key = content["slack_token"]
 
     def get_channel_id(self):
 
         # channel_name = "chatbot-test"
-        with open("config.json") as fin:
+        with open("secret.json") as fin:
             cfg = json.load(fin)
 
         if cfg["mode"] == "deploy":

@@ -141,23 +141,24 @@ def check_duplicate():
     return
 
 
-def update_leaderboard():
+def update_leaderboard(use_local_src: bool, upload: bool):
 
     m_Controller = Controller()
     view.Viewer(m_Controller)
-    past_record = ChatbotDB.query_past_record()
+    past_record = ChatbotDB.query_past_record(use_local_src)
     Controller.past_record = past_record
     action = m_Controller.count_user_points()
     # action = len(past_record)
     m_Controller.notify_viewers(action)
     upload_data = m_Controller.manage_filter_results_upload_gcp()
-    ChatbotDB.update_record_to_gcp(upload_data)
+    if upload:
+        ChatbotDB.update_record_to_gcp(upload_data)
     return
 
 
-def daily_update():
+def daily_update(use_local_src=False, upload=True):
 
     check_duplicate()
-    update_leaderboard()
+    update_leaderboard(use_local_src, upload)
 
     return
